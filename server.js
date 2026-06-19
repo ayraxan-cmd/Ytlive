@@ -10,7 +10,7 @@ const wss = new WebSocketServer({ server });
 // ================= [ আপনার পরিবর্তন করার জায়গা ] =================
 // পরবর্তীতে আসল API Key এবং Live Video ID এখানে বসাবেন
 const API_KEY = process.env.API_KEY || 'AIzaSyCLxAbJAze5n1TYKZHeC4-KLlE60_DyYSQ'; 
-const VIDEO_ID = process.env.VIDEO_ID || 'YOUR_REAL_VIDEO_ID_HERE'; 
+const VIDEO_ID = process.env.VIDEO_ID || 'vLOlrYarkiqn4X0O'; 
 // =============================================================
 
 let liveChatId = null;
