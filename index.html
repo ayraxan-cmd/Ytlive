@@ -1,144 +1,143 @@
-<!DOCTYPE html><html>
+<!DOCTYPE html>
+<html lang="bn">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Country Battle Live</title><style>
-body{
-margin:0;
-background:#0f172a;
-color:white;
-font-family:Arial,sans-serif;
-text-align:center;
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Country Battle Overlay</title>
+<style>
+body {
+    margin: 0;
+    background: transparent;
+    color: white;
+    font-family: Arial, sans-serif;
+    overflow: hidden;
 }
-
-h1{
-margin:15px 0;
+#game-container {
+    display: flex;
+    width: 100vw;
+    height: 100vh;
+    box-sizing: border-box;
+    padding: 10px;
 }
-
-#arena{
-width:90vw;
-height:90vw;
-max-width:500px;
-max-height:500px;
-margin:auto;
-border:4px solid #fff;
-border-radius:50%;
-position:relative;
-overflow:hidden;
+#arena-wrapper {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
-
-.flag{
-position:absolute;
-font-size:30px;
-animation:spin 15s linear infinite;
+#arena {
+    width: 90vw;
+    height: 90vw;
+    max-width: 450px;
+    max-height: 450px;
+    border: 6px solid #38bdf8;
+    border-radius: 50%;
+    position: relative;
+    overflow: hidden;
+    background: rgba(15, 23, 42, 0.85);
+    box-shadow: 0 0 20px rgba(56, 189, 248, 0.4);
 }
-
-@keyframes spin{
-from{transform:rotate(0deg);}
-to{transform:rotate(360deg);}
+.flag {
+    position: absolute;
+    font-size: 35px;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-
-table{
-width:95%;
-max-width:700px;
-margin:20px auto;
-border-collapse:collapse;
+#leaderboard-wrapper {
+    width: 220px;
+    background: rgba(15, 23, 42, 0.9);
+    border-left: 3px solid #38bdf8;
+    padding: 10px;
+    box-sizing: border-box;
 }
-
-td,th{
-border:1px solid #444;
-padding:8px;
+h2 {
+    margin: 0 0 10px 0;
+    font-size: 18px;
+    text-align: center;
+    color: #38bdf8;
 }
-
-input{
-padding:10px;
-width:200px;
+table {
+    width: 100%;
+    font-size: 14px;
+    border-collapse: collapse;
 }
-
-button{
-padding:10px;
+td, th {
+    padding: 6px 4px;
+    text-align: left;
+    border-bottom: 1px solid #334155;
 }
-
-</style></head><body><h1>🌍 COUNTRY BATTLE LIVE</h1><div id="arena"></div><br><input id="country" placeholder="Country Name">
-<button onclick="voteCountry()">Vote</button><table>
-<thead>
-<tr>
-<th>Rank</th>
-<th>Country</th>
-<th>Votes</th>
-</tr>
-</thead>
-<tbody id="leaderboard"></tbody>
-</table><script>
-
+.rank-1 { color: #f59e0b; font-weight: bold; }
+</style>
+</head>
+<body>
+<div id="game-container">
+    <div id="arena-wrapper"><div id="arena"></div></div>
+    <div id="leaderboard-wrapper">
+        <h2>📊 RANKING</h2>
+        <table>
+            <tbody id="leaderboard"></tbody>
+        </table>
+    </div>
+</div>
+<script>
 const flags = {
-bangladesh:"🇧🇩",
-india:"🇮🇳",
-pakistan:"🇵🇰",
-usa:"🇺🇸",
-uk:"🇬🇧",
-canada:"🇨🇦",
-australia:"🇦🇺",
-japan:"🇯🇵",
-china:"🇨🇳",
-germany:"🇩🇪",
-france:"🇫🇷",
-brazil:"🇧🇷",
-italy:"🇮🇹",
-russia:"🇷🇺",
-indonesia:"🇮🇩",
-saudiarabia:"🇸🇦",
-turkey:"🇹🇷",
-mexico:"🇲🇽"
+    bangladesh: { emoji: "🇧🇩", name: "BD" },
+    india: { emoji: "🇮🇳", name: "IND" },
+    pakistan: { emoji: "🇵🇰", name: "PAK" },
+    usa: { emoji: "🇺🇸", name: "USA" },
+    uk: { emoji: "🇬🇧", name: "UK" },
+    canada: { emoji: "🇨🇦", name: "CAN" },
+    brazil: { emoji: "🇧🇷", name: "BRA" },
+    argentina: { emoji: "🇦🇷", name: "ARG" }
 };
-
-let scores={};
-
-function voteCountry(){
-
-let c=document.getElementById("country")
-.value
-.toLowerCase()
-.replace(/\s/g,'');
-
-if(!flags[c]) return;
-
-scores[c]=(scores[c]||0)+1;
-
-let flag=document.createElement("div");
-flag.className="flag";
-flag.innerHTML=flags[c];
-
-flag.style.left=Math.random()*85+"%";
-flag.style.top=Math.random()*85+"%";
-
-document.getElementById("arena")
-.appendChild(flag);
-
-updateBoard();
-
+let scores = {};
+const ws = new WebSocket(location.origin.replace(/^http/, 'ws'));
+ws.onmessage = (event) => {
+    const data = JSON.parse(event.data);
+    const countryKey = data.country;
+    if (flags[countryKey]) {
+        scores[countryKey] = (scores[countryKey] || 0) + 1;
+        createBouncingFlag(flags[countryKey].emoji);
+        updateBoard();
+    }
+};
+function createBouncingFlag(emoji) {
+    let arena = document.getElementById("arena");
+    let flag = document.createElement("div");
+    flag.className = "flag";
+    flag.innerHTML = emoji;
+    arena.appendChild(flag);
+    let size = arena.clientWidth;
+    let x = size / 2, y = size / 2;
+    let dx = (Math.random() - 0.5) * 5;
+    let dy = (Math.random() - 0.5) * 5;
+    function animate() {
+        x += dx; y += dy;
+        let radius = (size / 2) - 25;
+        let dist = Math.hypot(x + 20 - (size/2), y + 20 - (size/2));
+        if (dist >= radius) {
+            let nx = (x + 20 - (size/2)) / dist;
+            let ny = (y + 20 - (size/2)) / dist;
+            let dot = dx * nx + dy * ny;
+            dx -= 2 * dot * nx; dy -= 2 * dot * ny;
+        }
+        flag.style.left = x + "px"; flag.style.top = y + "px";
+        requestAnimationFrame(animate);
+    }
+    animate();
 }
-
-function updateBoard(){
-
-let data=Object.entries(scores)
-.sort((a,b)=>b[1]-a[1]);
-
-let html='';
-
-data.forEach((x,i)=>{
-html+=`
-<tr>
-<td>${i+1}</td>
-<td>${flags[x[0]]} ${x[0]}</td>
-<td>${x[1]}</td>
-</tr>
-`;
-});
-
-document.getElementById("leaderboard").innerHTML=html;
-
+function updateBoard() {
+    let data = Object.entries(scores).sort((a, b) => b[1] - a[1]);
+    let html = '';
+    data.forEach((x, i) => {
+        let cls = i === 0 ? 'class="rank-1"' : '';
+        html += `<tr ${cls}><td>#${i + 1}</td><td>${flags[x[0]].emoji} ${flags[x[0]].name}</td><td>${x[1]}</td></tr>`;
+    });
+    document.getElementById("leaderboard").innerHTML = html;
 }
-
-</script></body>
+</script>
+</body>
 </html>
