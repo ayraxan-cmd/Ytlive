@@ -1,1 +1,144 @@
-<h1>Hello Country Battle</h1>
+<!DOCTYPE html><html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Country Battle Live</title><style>
+body{
+margin:0;
+background:#0f172a;
+color:white;
+font-family:Arial,sans-serif;
+text-align:center;
+}
+
+h1{
+margin:15px 0;
+}
+
+#arena{
+width:90vw;
+height:90vw;
+max-width:500px;
+max-height:500px;
+margin:auto;
+border:4px solid #fff;
+border-radius:50%;
+position:relative;
+overflow:hidden;
+}
+
+.flag{
+position:absolute;
+font-size:30px;
+animation:spin 15s linear infinite;
+}
+
+@keyframes spin{
+from{transform:rotate(0deg);}
+to{transform:rotate(360deg);}
+}
+
+table{
+width:95%;
+max-width:700px;
+margin:20px auto;
+border-collapse:collapse;
+}
+
+td,th{
+border:1px solid #444;
+padding:8px;
+}
+
+input{
+padding:10px;
+width:200px;
+}
+
+button{
+padding:10px;
+}
+
+</style></head><body><h1>🌍 COUNTRY BATTLE LIVE</h1><div id="arena"></div><br><input id="country" placeholder="Country Name">
+<button onclick="voteCountry()">Vote</button><table>
+<thead>
+<tr>
+<th>Rank</th>
+<th>Country</th>
+<th>Votes</th>
+</tr>
+</thead>
+<tbody id="leaderboard"></tbody>
+</table><script>
+
+const flags = {
+bangladesh:"🇧🇩",
+india:"🇮🇳",
+pakistan:"🇵🇰",
+usa:"🇺🇸",
+uk:"🇬🇧",
+canada:"🇨🇦",
+australia:"🇦🇺",
+japan:"🇯🇵",
+china:"🇨🇳",
+germany:"🇩🇪",
+france:"🇫🇷",
+brazil:"🇧🇷",
+italy:"🇮🇹",
+russia:"🇷🇺",
+indonesia:"🇮🇩",
+saudiarabia:"🇸🇦",
+turkey:"🇹🇷",
+mexico:"🇲🇽"
+};
+
+let scores={};
+
+function voteCountry(){
+
+let c=document.getElementById("country")
+.value
+.toLowerCase()
+.replace(/\s/g,'');
+
+if(!flags[c]) return;
+
+scores[c]=(scores[c]||0)+1;
+
+let flag=document.createElement("div");
+flag.className="flag";
+flag.innerHTML=flags[c];
+
+flag.style.left=Math.random()*85+"%";
+flag.style.top=Math.random()*85+"%";
+
+document.getElementById("arena")
+.appendChild(flag);
+
+updateBoard();
+
+}
+
+function updateBoard(){
+
+let data=Object.entries(scores)
+.sort((a,b)=>b[1]-a[1]);
+
+let html='';
+
+data.forEach((x,i)=>{
+html+=`
+<tr>
+<td>${i+1}</td>
+<td>${flags[x[0]]} ${x[0]}</td>
+<td>${x[1]}</td>
+</tr>
+`;
+});
+
+document.getElementById("leaderboard").innerHTML=html;
+
+}
+
+</script></body>
+</html>
