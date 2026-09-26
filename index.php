@@ -1,13 +1,11 @@
 <?php
 session_start();
 
-// SQLite ডাটাবেজ কানেকশন (Render-এর জন্য শতভাগ নিরাপদ ও পারফেক্ট)
 $dbFile = 'database.sqlite';
 try {
     $conn = new PDO("sqlite:" . $dbFile);
     $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    // অটো টেবিল তৈরি (না থাকলে)
     $conn->exec("CREATE TABLE IF NOT EXISTS users (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
         username TEXT NOT NULL,
@@ -32,7 +30,6 @@ try {
 $msg = "";
 $msg_type = "";
 
-// ১. রেজিস্ট্রেশন লজিক
 if (isset($_POST['register'])) {
     $username = trim($_POST['username']);
     $email = trim($_POST['email']);
@@ -41,12 +38,12 @@ if (isset($_POST['register'])) {
     $stmt = $conn->prepare("SELECT * FROM users WHERE email = ?");
     $stmt->execute([$email]);
     if ($stmt->rowCount() > 0) {
-        $msg = "এই ইমেইল দিয়ে ইতিমধ্যে একটি অ্যাকাউন্ট রয়েছে!";
+        $msg = "এই ইমেইল দিয়ে ইতিমধ্যে অ্যাকাউন্ট রয়েছে!";
         $msg_type = "error";
     } else {
         $stmt = $conn->prepare("INSERT INTO users (username, email, password, balance) VALUES (?, ?, ?, 0.00)");
         if ($stmt->execute([$username, $email, $password])) {
-            $msg = "রেজিস্ট্রেশন সফল হয়েছে! এখন লগইন করুন।";
+            $msg = "রেজিস্ট্রেশন সফল হয়েছে! এবার লগইন করুন।";
             $msg_type = "success";
         } else {
             $msg = "রেজিস্ট্রেশন ব্যর্থ হয়েছে।";
@@ -55,7 +52,6 @@ if (isset($_POST['register'])) {
     }
 }
 
-// ২. লগইন লজিক
 if (isset($_POST['login'])) {
     $email = trim($_POST['email']);
     $password = $_POST['password'];
@@ -75,14 +71,12 @@ if (isset($_POST['login'])) {
     }
 }
 
-// ৩. লগআউট
 if (isset($_GET['logout'])) {
     session_destroy();
     header("Location: index.php");
     exit();
 }
 
-// ৪. অটো ব্যালান্স অ্যাড (HasanPay Firebase API ভেরিফিকেশন)
 if (isset($_POST['add_balance']) && isset($_SESSION['user_id'])) {
     $amount_to_add = floatval($_POST['amount']);
     $trxId = strtoupper(trim($_POST['trxId']));
@@ -108,7 +102,7 @@ if (isset($_POST['add_balance']) && isset($_SESSION['user_id'])) {
                 $msg = "সফল! ৳{$amount_to_add} আপনার ওয়ালেটে যোগ হয়েছে।";
                 $msg_type = "success";
             } else {
-                $msg = "পেমেন্টের টাকার পরিমাণ মিলেনি! পাঠানো হয়েছে: ৳" . $data['amount'];
+                $msg = "পেমেন্টের টাকার পরিমাণ মিলেননি! পাঠানো হয়েছে: ৳" . $data['amount'];
                 $msg_type = "error";
             }
         } else {
@@ -118,7 +112,6 @@ if (isset($_POST['add_balance']) && isset($_SESSION['user_id'])) {
     }
 }
 
-// ৫. ডায়মন্ড টপ-আপ অর্ডার লজিক
 if (isset($_POST['topup_order']) && isset($_SESSION['user_id'])) {
     $userId = $_SESSION['user_id'];
     $playerId = trim($_POST['playerId']);
@@ -136,10 +129,10 @@ if (isset($_POST['topup_order']) && isset($_SESSION['user_id'])) {
         $stmt = $conn->prepare("INSERT INTO orders (user_id, player_id, package_name, amount, status) VALUES (?, ?, ?, ?, 'Completed')");
         $stmt->execute([$userId, $playerId, $packageName, $packagePrice]);
 
-        $msg = "টপ-আপ অর্ডার সফল হয়েছে! UID: {$playerId}";
+        $msg = "টপ-আপ সফল হয়েছে! UID: {$playerId}";
         $msg_type = "success";
     } else {
-        $msg = "পর্যাপ্ত ব্যালান্স নেই!";
+        $msg = "ওয়ালেটে পর্যাপ্ত ব্যালান্স নেই!";
         $msg_type = "error";
     }
 }
@@ -159,103 +152,139 @@ if (isset($_SESSION['user_id'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Free Fire Auto Top-Up (Render)</title>
-    <script src="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.js"></script>
+    <title>Gaming Top-Up BD</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Inter', sans-serif; }
+        body { background: #07090e; color: #fff; display: flex; justify-content: center; align-items: center; min-height: 100vh; padding: 12px; }
+        .app-container { width: 100%; max-width: 420px; background: #111622; border-radius: 24px; box-shadow: 0 15px 35px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.08); overflow: hidden; }
+        .app-header { background: linear-gradient(135deg, #1f293d, #111622); padding: 24px 20px; text-align: center; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .app-header h2 { font-size: 22px; font-weight: 800; color: #facc15; display: flex; align-items: center; justify-content: center; gap: 8px; }
+        .app-header p { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+        .app-body { padding: 20px; }
+        .alert { padding: 12px; border-radius: 12px; font-size: 13px; text-align: center; margin-bottom: 16px; font-weight: 500; }
+        .alert.success { background: rgba(16, 185, 129, 0.15); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3); }
+        .alert.error { background: rgba(239, 68, 68, 0.15); color: #f87171; border: 1px solid rgba(239, 68, 68, 0.3); }
+        .wallet-card { background: linear-gradient(135deg, #1e3a8a, #1e1b4b); padding: 20px; border-radius: 16px; text-align: center; margin-bottom: 20px; border: 1px solid rgba(59, 130, 246, 0.3); box-shadow: inset 0 1px 0 rgba(255,255,255,0.1); }
+        .wallet-card .user-name { font-size: 13px; color: #93c5fd; }
+        .wallet-card .balance { font-size: 28px; font-weight: 800; color: #4ade80; margin: 6px 0; }
+        .wallet-card .label { font-size: 11px; color: #cbd5e1; text-transform: uppercase; letter-spacing: 1px; }
+        .form-card { background: #182030; padding: 16px; border-radius: 16px; margin-bottom: 16px; border: 1px solid rgba(255,255,255,0.05); }
+        .form-card h4 { font-size: 13px; font-weight: 700; margin-bottom: 12px; display: flex; align-items: center; gap: 6px; }
+        .form-group { margin-bottom: 12px; }
+        .form-group label { display: block; font-size: 11px; color: #9ca3af; margin-bottom: 5px; font-weight: 500; }
+        .form-control { width: 100%; padding: 11px 14px; background: #0f141f; border: 1px solid #2a3447; border-radius: 10px; color: #fff; font-size: 13px; outline: none; transition: all 0.3s; }
+        .form-control:focus { border-color: #facc15; box-shadow: 0 0 0 2px rgba(250,204,21,0.2); }
+        .btn { width: 100%; padding: 12px; border: none; border-radius: 10px; font-weight: 700; font-size: 13px; cursor: pointer; transition: all 0.2s; }
+        .btn-primary { background: #facc15; color: #0f172a; box-shadow: 0 4px 12px rgba(250,204,21,0.3); }
+        .btn-primary:hover { background: #eab308; }
+        .btn-info { background: #2563eb; color: #fff; box-shadow: 0 4px 12px rgba(37,99,235,0.3); }
+        .btn-info:hover { background: #1d4ed8; }
+        .switch-text { text-align: center; font-size: 12px; color: #60a5fa; margin-top: 14px; cursor: pointer; font-weight: 500; }
+        .switch-text:hover { text-decoration: underline; }
+        .logout-btn { display: block; text-align: center; font-size: 12px; color: #ef4444; margin-top: 15px; text-decoration: none; font-weight: 600; }
+        .logout-btn:hover { text-decoration: underline; }
+        .hidden { display: none; }
+    </style>
 </head>
-<body class="bg-gray-950 text-white font-sans antialiased flex items-center justify-center min-h-screen p-4">
+<body>
 
-    <div class="w-full max-w-md bg-gray-900 border border-gray-800 p-6 rounded-2xl shadow-2xl">
-        <div class="text-center mb-5">
-            <h2 class="text-2xl font-extrabold text-yellow-400"><i class="fas fa-gem"></i> Gaming Top-Up BD</h2>
-            <p class="text-xs text-gray-400 mt-1">রেন্ডার ক্লাউড হোস্টিং ও অটো পেমেন্ট সিস্টেম</p>
+    <div class="app-container">
+        <div class="app-header">
+            <h2><i class="fas fa-gem"></i> Gaming Top-Up BD</h2>
+            <p>প্রফেশনাল অটোমেটেড ডায়মন্ড শপ</p>
         </div>
 
-        <?php if (!empty($msg)): ?>
-            <div class="mb-4 p-3 rounded-lg text-xs text-center font-medium <?php echo $msg_type === 'success' ? 'bg-green-950 text-green-300 border border-green-800' : 'bg-red-950 text-red-300 border border-red-800'; ?>">
-                <?php echo $msg; ?>
-            </div>
-        <?php endif; ?>
-
-        <?php if (!isset($_SESSION['user_id'])): ?>
-            <div id="authContainer">
-                <form method="POST" id="loginForm" class="space-y-4">
-                    <h3 class="text-yellow-400 font-semibold text-sm">লগইন করুন</h3>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">ইমেইল</label>
-                        <input type="email" name="email" required class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">পাসওয়ার্ড</label>
-                        <input type="password" name="password" required class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                    </div>
-                    <button type="submit" name="login" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2.5 rounded-lg text-sm transition">লগইন</button>
-                    <p class="text-xs text-center text-blue-400 cursor-pointer mt-2" onclick="toggleAuth()">অ্যাকাউন্ট নেই? রেজিস্ট্রেশন করুন</p>
-                </form>
-
-                <form method="POST" id="regForm" class="space-y-4 hidden">
-                    <h3 class="text-yellow-400 font-semibold text-sm">নতুন অ্যাকাউন্ট</h3>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">নাম</label>
-                        <input type="text" name="username" required class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">ইমেইল</label>
-                        <input type="email" name="email" required class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">পাসওয়ার্ড</label>
-                        <input type="password" name="password" required class="w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                    </div>
-                    <button type="submit" name="register" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2.5 rounded-lg text-sm transition">রেজিস্ট্রেশন</button>
-                    <p class="text-xs text-center text-blue-400 cursor-pointer mt-2" onclick="toggleAuth()">লগইন করুন</p>
-                </form>
-            </div>
-        <?php else: ?>
-            <div class="space-y-4">
-                <div class="bg-gray-800 border border-gray-700 p-3.5 rounded-xl text-center">
-                    <p class="text-xs text-gray-400">স্বাগতম, <span class="text-white font-bold"><?php echo $_SESSION['username']; ?></span></p>
-                    <p class="text-xl font-bold text-green-400 mt-1">৳<?php echo number_format($current_balance, 2); ?></p>
-                    <span class="text-[10px] text-gray-400 uppercase tracking-widest">ওয়ালেট ব্যালান্স</span>
+        <div class="app-body">
+            <?php if (!empty($msg)): ?>
+                <div class="alert <?php echo $msg_type; ?>">
+                    <?php echo $msg; ?>
                 </div>
+            <?php endif; ?>
 
-                <form method="POST" class="space-y-3 bg-gray-800/40 p-3.5 rounded-xl border border-gray-700/50">
-                    <h4 class="text-xs font-bold text-blue-400 uppercase">💳 অটো ব্যালান্স অ্যাড</h4>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">টাকার পরিমাণ</label>
-                        <input type="number" name="amount" required placeholder="যেমন: 50" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-blue-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">TrxID</label>
-                        <input type="text" name="trxId" required placeholder="TrxID দিন" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white uppercase focus:outline-none focus:border-blue-400">
-                    </div>
-                    <button type="submit" name="add_balance" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg text-sm transition">পেমেন্ট ভেরিফাই করুন</button>
-                </form>
+            <?php if (!isset($_SESSION['user_id'])): ?>
+                <div id="authContainer">
+                    <form method="POST" id="loginForm">
+                        <div class="form-card">
+                            <h4 style="color: #facc15;"><i class="fas fa-sign-in-alt"></i> অ্যাকাউন্টে প্রবেশ করুন</h4>
+                            <div class="form-group">
+                                <label>ইমেইল এড্রেস</label>
+                                <input type="email" name="email" required class="form-control" placeholder="example@gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label>পাসওয়ার্ড</label>
+                                <input type="password" name="password" required class="form-control" placeholder="••••••••">
+                            </div>
+                            <button type="submit" name="login" class="btn btn-primary" style="margin-top: 6px;">লগইন করুন</button>
+                        </div>
+                        <p class="switch-text" onclick="toggleAuth()">অ্যাকাউন্ট নেই? নতুন রেজিস্ট্রেশন করুন</p>
+                    </form>
 
-                <form method="POST" class="space-y-3 bg-gray-800/40 p-3.5 rounded-xl border border-gray-700/50">
-                    <h4 class="text-xs font-bold text-yellow-400 uppercase">💎 গেম টপ-আপ কিনুন</h4>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">Free Fire UID</label>
-                        <input type="text" name="playerId" required placeholder="UID দিন" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                    </div>
-                    <div>
-                        <label class="block text-xs text-gray-400 mb-1">প্যাকেজ</label>
-                        <select name="packageName" id="pkgSelect" onchange="updatePrice()" class="w-full px-3 py-2 bg-gray-900 border border-gray-700 rounded-lg text-sm text-white focus:outline-none focus:border-yellow-400">
-                            <option value="25 Diamonds" data-price="25">25 Diamonds - ৳25</option>
-                            <option value="50 Diamonds" data-price="48">50 Diamonds - ৳48</option>
-                            <option value="115 Diamonds" data-price="95">115 Diamonds - ৳95</option>
-                            <option value="Weekly Membership" data-price="160">Weekly - ৳160</option>
-                        </select>
-                    </div>
-                    <input type="hidden" name="packagePrice" id="packagePrice" value="25">
-                    <button type="submit" name="topup_order" class="w-full bg-yellow-500 hover:bg-yellow-400 text-gray-950 font-bold py-2 rounded-lg text-sm transition">অর্ডার করুন</button>
-                </form>
-
-                <div class="text-center pt-1">
-                    <a href="index.php?logout=true" class="text-xs text-red-400 hover:underline">লগআউট</a>
+                    <form method="POST" id="regForm" class="hidden">
+                        <div class="form-card">
+                            <h4 style="color: #facc15;"><i class="fas fa-user-plus"></i> নতুন অ্যাকাউন্ট তৈরি</h4>
+                            <div class="form-group">
+                                <label>আপনার নাম</label>
+                                <input type="text" name="username" required class="form-control" placeholder="আপনার নাম লিখুন">
+                            </div>
+                            <div class="form-group">
+                                <label>ইমেইল এড্রেস</label>
+                                <input type="email" name="email" required class="form-control" placeholder="example@gmail.com">
+                            </div>
+                            <div class="form-group">
+                                <label>পাসওয়ার্ড</label>
+                                <input type="password" name="password" required class="form-control" placeholder="••••••••">
+                            </div>
+                            <button type="submit" name="register" class="btn btn-primary" style="margin-top: 6px;">রেজিস্ট্রেশন সম্পন্ন করুন</button>
+                        </div>
+                        <p class="switch-text" onclick="toggleAuth()">আগে থেকেই অ্যাকাউন্ট আছে? লগইন করুন</p>
+                    </form>
                 </div>
-            </div>
-        <?php endif; ?>
+            <?php else: ?>
+                <div>
+                    <div class="wallet-card">
+                        <span class="user-name">স্বাগতম, <b><?php echo $_SESSION['username']; ?></b></span>
+                        <div class="balance">৳<?php echo number_format($current_balance, 2); ?></div>
+                        <span class="label">প্রধান ওয়ালেট ব্যালান্স</span>
+                    </div>
+
+                    <form method="POST" class="form-card">
+                        <h4 style="color: #60a5fa;"><i class="fas fa-wallet"></i> অটো ব্যালান্স অ্যাড (HasanPay)</h4>
+                        <div class="form-group">
+                            <label>টাকার পরিমাণ (BDT)</label>
+                            <input type="number" name="amount" required class="form-control" placeholder="যেমন: 50">
+                        </div>
+                        <div class="form-group">
+                            <label>TrxID (ট্রানজেকশন আইডি)</label>
+                            <input type="text" name="trxId" required class="form-control" placeholder="বিকাশ/নগদ TrxID দিন" style="text-transform: uppercase;">
+                        </div>
+                        <button type="submit" name="add_balance" class="btn btn-info">পেমেন্ট ভেরিফাই ও ব্যালান্স যোগ করুন</button>
+                    </form>
+
+                    <form method="POST" class="form-card">
+                        <h4 style="color: #facc15;"><i class="fas fa-gem"></i> গেম টপ-আপ অর্ডার</h4>
+                        <div class="form-group">
+                            <label>Free Fire Player UID</label>
+                            <input type="text" name="playerId" required class="form-control" placeholder="আপনার গেম UID দিন">
+                        </div>
+                        <div class="form-group">
+                            <label>প্যাকেজ নির্বাচন করুন</label>
+                            <select name="packageName" id="pkgSelect" onchange="updatePrice()" class="form-control">
+                                <option value="25 Diamonds" data-price="25">25 Diamonds - ৳25</option>
+                                <option value="50 Diamonds" data-price="48">50 Diamonds - ৳48</option>
+                                <option value="115 Diamonds" data-price="95">115 Diamonds - ৳95</option>
+                                <option value="Weekly Membership" data-price="160">Weekly Membership - ৳160</option>
+                            </select>
+                        </div>
+                        <input type="hidden" name="packagePrice" id="packagePrice" value="25">
+                        <button type="submit" name="topup_order" class="btn btn-primary">ওয়ালেট থেকে অর্ডার কনফার্ম করুন</button>
+                    </form>
+
+                    <a href="index.php?logout=true" class="logout-btn"><i class="fas fa-sign-out-alt"></i> অ্যাকাউন্ট থেকে লগআউট করুন</a>
+                </div>
+            <?php endif; ?>
+        </div>
     </div>
 
     <script>
